@@ -10,7 +10,7 @@ class MLP(nn.Module):
         self.layers = nn.ModuleList(
             nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim])
         )
-        self.act = nn.Identity() if act is None else nn.ReLU()(act)
+        self.act = nn.Identity() if act is None else nn.ReLU()
 
     def forward(self, x):
         for i, layer in enumerate(self.layers):
