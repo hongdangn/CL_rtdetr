@@ -4,6 +4,15 @@ from src.data import get_coco_api_from_dataset
 from .solver import BaseSolver
 from .det_engine import train_one_epoch, evaluate
 
+# add clip embed and otod
+from .mlp import MLP
+from .desc_embed import get_desc_embed
+from uotod.match import BalancedSinkhorn
+from uotod.loss import DetectionLoss
+from uotod.loss import MultipleObjectiveLoss, GIoULoss, NegativeProbLoss
+from torch.nn import L1Loss
+#
+
 from termcolor import cprint
 
 class DetSolver(BaseSolver):
@@ -19,6 +28,22 @@ class DetSolver(BaseSolver):
         task_idx = self.train_dataloader.dataset.task_idx
         data_ratio = self.train_dataloader.dataset.data_ratio
 
+        # embed text with CLIP
+        desc_embed = get_desc_embed() 
+        enc_mlp = MLP(input_dim=512, hidden_dim=1024, output_dim=256, num_layers=2)
+        final_desc_enc = enc_mlp(desc_embed)
+
+        matching_method = BalancedSinkhorn(
+            cls_match_module=NegativeProbLoss(reduction="none"),
+            loc_match_module=MultipleObjectiveLoss(
+                losses=[GIoULoss(reduction="none"), L1Loss(reduction="none")],
+                weights=[1., 5.],
+            ),
+            background_cost=0.,  # Does not influence the matching when using balanced OT
+        )
+        desc_criterion = DetectionLoss(matching_method = matching_method)
+        ######
+
         cprint(f"Task {task_idx} training...", "red", "on_yellow")
 
         for epoch in range(self.last_epoch + 1, args.epochs):
@@ -32,6 +57,8 @@ class DetSolver(BaseSolver):
                 self.optimizer,
                 self.device,
                 epoch,
+                desc_criterion, # description criterion
+                final_desc_enc, # description embedding
                 args.clip_max_norm,
                 ema=self.ema,
                 scaler=self.scaler,

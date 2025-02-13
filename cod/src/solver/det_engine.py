@@ -64,6 +64,26 @@ def compute_attn(model, samples, targets, device, ex_device=None):
 
     return model_encoder_outputs[0][-1]
 
+def get_last_layer_query(model, samples, targets, device, ex_device=None):
+    with torch.inference_mode():
+        model.to(device)
+
+        decoder_queries = []
+        hook = (
+            model.decoder.decoder
+            .layers[-1]
+            .register_forward_hook(
+                lambda module, input, output: decoder_queries.append(output)
+            )
+        )
+
+        _ = model(samples, targets)
+        hook.remove()
+
+        if ex_device is not None:
+            model.to(ex_device)
+
+    return decoder_queries[0]
 
 def fake_query(outputs, targets, class_ids, topk=30, threshold=0.3):
     out_logits, out_bbox = outputs["pred_logits"], outputs["pred_boxes"]
@@ -112,6 +132,8 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     device: torch.device,
     epoch: int,
+    desc_criterion,
+    final_desc_enc: torch.nn.Module,
     max_norm: float = 0,
     task_idx: int = None,
     data_ratio: str = None,
@@ -159,6 +181,11 @@ def train_one_epoch(
             teacher_outputs = teacher_model(samples, targets)
             targets = fake_query(teacher_outputs, targets, divided_classes[task_idx])
 
+        # add clip embed loss
+        queries = get_last_layer_query(model, samples, targets, device)
+        desc_loss = desc_criterion(queries, final_desc_enc)
+        ###
+        
         if scaler is not None:
             with torch.autocast(device_type=str(device), cache_enabled=True):
                 outputs = model(samples, targets)
@@ -185,6 +212,8 @@ def train_one_epoch(
 
             if distill_attn:
                 loss = loss + location_loss * 0.5
+
+            loss += loss + desc_loss * 0.15
 
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
