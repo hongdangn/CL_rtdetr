@@ -167,7 +167,7 @@ def train_one_epoch(
         unit="it",
     )
 
-    final_desc_enc = enc_mlp(desc_embed)
+    
 
     for batch_idx, (samples, targets) in enumerate(tqdm_batch):
         samples = samples.to(device)
@@ -187,8 +187,7 @@ def train_one_epoch(
 
         # add clip embed loss
         queries = get_last_layer_query(model, samples, targets, device)
-        # final_desc_enc.requires_grad=True
-
+        final_desc_enc = enc_mlp(desc_embed)
         desc_loss = desc_criterion(queries, final_desc_enc)
         ###
         
@@ -237,6 +236,7 @@ def train_one_epoch(
 
         tqdm_batch.set_postfix(
             rtdetr_loss=loss_value.item(),
+            desc_loss=desc_loss.item(),
             kd_loss=location_loss.item() if distill_attn else 0,
         )
 
