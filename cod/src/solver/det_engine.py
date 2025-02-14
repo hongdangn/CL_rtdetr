@@ -126,13 +126,14 @@ def fake_query(outputs, targets, class_ids, topk=30, threshold=0.3):
 
 def train_one_epoch(
     model: torch.nn.Module,
+    enc_mlp,
     criterion: torch.nn.Module,
     data_loader: Iterable,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
     epoch: int,
     desc_criterion,
-    final_desc_enc: torch.nn.Module,
+    desc_embed: torch.nn.Module,
     max_norm: float = 0,
     task_idx: int = None,
     data_ratio: str = None,
@@ -143,6 +144,8 @@ def train_one_epoch(
 ):
     model.train()
     criterion.train()
+    enc_mlp.train()
+    desc_criterion.train()
 
     ema = kwargs.get("ema", None)
     scaler = kwargs.get("scaler", None)
@@ -163,6 +166,8 @@ def train_one_epoch(
         total=len(data_loader),
         unit="it",
     )
+
+    final_desc_enc = enc_mlp(desc_embed)
 
     for batch_idx, (samples, targets) in enumerate(tqdm_batch):
         samples = samples.to(device)

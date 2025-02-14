@@ -34,9 +34,6 @@ class DetSolver(BaseSolver):
         # print(desc_embed)
         enc_mlp = MLP(input_dim=512, hidden_dim=1024, output_dim=256, num_layers=2)
         enc_mlp.to(self.device)
-        enc_mlp.train()
-
-        final_desc_enc = enc_mlp(desc_embed)
 
         matching_method = BalancedSinkhorn(
             cls_match_module=NegativeProbLoss(reduction="none"),
@@ -57,13 +54,14 @@ class DetSolver(BaseSolver):
 
             train_one_epoch(
                 self.model,
+                enc_mlp, # mlp for embedding description
                 self.criterion,
                 self.train_dataloader,
                 self.optimizer,
                 self.device,
                 epoch,
                 desc_criterion, # description criterion
-                final_desc_enc, # description embedding
+                desc_embed, # description embedding
                 args.clip_max_norm,
                 ema=self.ema,
                 scaler=self.scaler,
