@@ -243,6 +243,7 @@ def train_one_epoch(
         wandb.log(
             {
                 "RT-DETR Loss": loss_value,
+                "Desc-Loss": desc_loss.item(),
                 "KD Loss": (location_loss.item() if distill_attn else 0),
             }
         )

@@ -161,7 +161,7 @@ class _Match(nn.Module, metaclass=ABCMeta):
         input_flat = input.view(batch_size * num_queries, -1).unsqueeze(1) # (B*Q, 1, D)
         target_expanded = target.unsqueeze(0) # (1, N+1, D)
 
-        costs_flat = torch.mean((input_flat - target_expanded) ** 2, dim=2) # (B*Q, N+1)
+        costs_flat = torch.sum((input_flat - target_expanded) ** 2, dim=2) # (B*Q, N+1)
 
         return costs_flat.view(batch_size, num_queries, -1) # (B, Q, N+1)
 
