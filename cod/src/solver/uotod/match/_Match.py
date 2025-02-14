@@ -95,6 +95,7 @@ class _Match(nn.Module, metaclass=ABCMeta):
 
         # Verify that the matching is not NaN.
         if torch.isnan(matching).any():
+            print(matching)
             raise RuntimeError("The matching is NaN, this may be caused by a too low regularization parameter.")
 
         # saving for the plotting
