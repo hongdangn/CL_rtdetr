@@ -65,23 +65,22 @@ def compute_attn(model, samples, targets, device, ex_device=None):
     return model_encoder_outputs[0][-1]
 
 def get_last_layer_query(model, samples, targets, device, ex_device=None):
-    with torch.inference_mode():
-        model.to(device)
+    model.to(device)
 
-        decoder_queries = []
-        hook = (
-            model.decoder.decoder
-            .layers[-1]
-            .register_forward_hook(
-                lambda module, input, output: decoder_queries.append(output)
-            )
+    decoder_queries = []
+    hook = (
+        model.decoder.decoder
+        .layers[-1]
+        .register_forward_hook(
+            lambda module, input, output: decoder_queries.append(output)
         )
+    )
 
-        _ = model(samples, targets)
-        hook.remove()
+    _ = model(samples, targets)
+    hook.remove()
 
-        if ex_device is not None:
-            model.to(ex_device)
+    if ex_device is not None:
+        model.to(ex_device)
 
     return decoder_queries[0]
 
@@ -183,8 +182,9 @@ def train_one_epoch(
 
         # add clip embed loss
         queries = get_last_layer_query(model, samples, targets, device)
-        clone_emb = final_desc_enc.clone().requires_grad_()
-        desc_loss = desc_criterion(queries, clone_emb)
+        # final_desc_enc.requires_grad=True
+
+        desc_loss = desc_criterion(queries, final_desc_enc)
         ###
         
         if scaler is not None:

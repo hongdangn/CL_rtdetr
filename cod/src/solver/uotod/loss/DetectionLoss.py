@@ -144,19 +144,14 @@ class DetectionLoss(_Loss):
       # input: queries with size (batch_size, num_queries, dim)
       # target: labels descriptions with size (num_labels + 1, dim)    
       # return Tensor: (batch_size, num_queries, num_labels + 1)
-      costs = []
+      
       batch_size, num_queries = input.size()[:2]
-      input = input.view(batch_size * num_queries, -1)
-      criterion = torch.nn.MSELoss(reduction="mean")
+      input_flat = input.view(batch_size * num_queries, -1).unsqueeze(1) # (B*Q, 1, D)
+      target_expanded = target.unsqueeze(0) # (1, N+1, D)
 
-      for query in input:
-        tmp_loss = torch.cat([criterion(query, label_desc).unsqueeze(0)
-                              for label_desc in target])
-        costs.append(tmp_loss.unsqueeze(0))
+      costs_flat = torch.mean((input_flat - target_expanded) ** 2, dim=2) # (B*Q, N+1)
 
-      costs = torch.cat(costs, dim = 0).view(batch_size, num_queries, -1)
-
-      return costs
+      return costs_flat.view(batch_size, num_queries, -1) # (B, Q, N+1)
 
     def _get_averaging_coefs(self, matching: Tensor) -> Tuple[Tensor, Tensor]:
         r"""

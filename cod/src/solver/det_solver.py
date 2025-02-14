@@ -11,6 +11,7 @@ from .uotod.match import BalancedSinkhorn
 from .uotod.loss import DetectionLoss
 from .uotod.loss import MultipleObjectiveLoss, GIoULoss, NegativeProbLoss
 from torch.nn import L1Loss
+import torch
 #
 
 from termcolor import cprint
@@ -29,7 +30,8 @@ class DetSolver(BaseSolver):
         data_ratio = self.train_dataloader.dataset.data_ratio
 
         # embed text with CLIP
-        desc_embed = get_desc_embed(self.device) 
+        desc_embed = get_desc_embed(self.device).to(torch.float32)
+        # print(desc_embed)
         enc_mlp = MLP(input_dim=512, hidden_dim=1024, output_dim=256, num_layers=2)
         enc_mlp.to(self.device)
         enc_mlp.train()
