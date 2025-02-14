@@ -87,8 +87,7 @@ labels_dict = {
     'background': 'The surrounding environment or backdrop in an image that is not the main subject, often consisting of surfaces, objects, or scenery.'
 }
 
-def get_desc_embed():
-  device = "cuda" if torch.cuda.is_available() else "cpu"
+def get_desc_embed(device):
   model, preprocess = clip.load('ViT-B/32', device)
 
   labels_desc = [key + ": " + value for key, value in labels_dict.items()] 
@@ -99,4 +98,4 @@ def get_desc_embed():
   with torch.no_grad():
       labels_enc = model.encode_text(text_inputs)
 
-  return labels_enc
+  return labels_enc.to(device)

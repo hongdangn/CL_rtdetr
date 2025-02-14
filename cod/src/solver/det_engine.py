@@ -183,7 +183,8 @@ def train_one_epoch(
 
         # add clip embed loss
         queries = get_last_layer_query(model, samples, targets, device)
-        desc_loss = desc_criterion(queries, final_desc_enc)
+        clone_emb = final_desc_enc.clone().requires_grad_()
+        desc_loss = desc_criterion(queries, clone_emb)
         ###
         
         if scaler is not None:
@@ -213,7 +214,7 @@ def train_one_epoch(
             if distill_attn:
                 loss = loss + location_loss * 0.5
 
-            loss += loss + desc_loss * 0.15
+            loss = loss + desc_loss * 0.15
 
             optimizer.zero_grad(set_to_none=True)
             loss.backward()

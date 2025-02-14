@@ -46,7 +46,6 @@ class _Sinkhorn(_Match, metaclass=ABCMeta):
         :param target_mask: mask of the target boxes (batch_size, num_tgt)
         :return: histograms of the predictions and targets (batch_size, num_pred), (batch_size, num_tgt)
         """
-        print("Cost Matrix Shape Histograms: ", cost_matrix.shape)
         batch_size, num_pred, num_tgt = cost_matrix.shape
 
         target_mask = torch.ones((batch_size, num_tgt))
@@ -59,7 +58,6 @@ class _Sinkhorn(_Match, metaclass=ABCMeta):
         if self.background:
             h_tgt[:, -1] = (num_pred - num_tgt_batch) / num_pred
             for b in range(batch_size):
-                print(num_tgt_batch[b])
                 h_tgt[b, :num_tgt_batch[b].int()] = 1. / num_pred
         else:
             for b in range(batch_size):
@@ -78,7 +76,6 @@ class _Sinkhorn(_Match, metaclass=ABCMeta):
         :param target_mask: the target mask. Tensor of shape (batch_size, num_tgt).
         :return: the matching. Tensor of shape (batch_size, num_pred, num_tgt + 1). The last entry of the last dimension is the background.
         """
-        print("Cost Matrix Compute Matching Shape: ", cost_matrix.shape)
         
         num_pred = cost_matrix.shape[1]
         # Compute the histograms
